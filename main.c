@@ -382,8 +382,25 @@ static msg_t Thread1(void *arg) {
 	(void)arg;
 	chRegSetThreadName("blinker");
 	while (TRUE) {
-		palTogglePad(GPIOD, GPIOD_LED6);
-		chThdSleepMilliseconds(fs_ready ? 125 : 500);
+		if (fs_ready) {
+			palTogglePad(GPIOD, GPIOD_LED3);
+			chThdSleep(MS2ST(250));
+			palTogglePad(GPIOD, GPIOD_LED4);
+			chThdSleep(MS2ST(250));
+			palTogglePad(GPIOD, GPIOD_LED6);
+			chThdSleep(MS2ST(250));
+			palTogglePad(GPIOD, GPIOD_LED5);
+			chThdSleep(MS2ST(250));
+		} else {
+			palTogglePad(GPIOD, GPIOD_LED5);
+			chThdSleep(MS2ST(250));
+			palTogglePad(GPIOD, GPIOD_LED6);
+			chThdSleep(MS2ST(250));
+			palTogglePad(GPIOD, GPIOD_LED4);
+			chThdSleep(MS2ST(250));
+			palTogglePad(GPIOD, GPIOD_LED3);
+			chThdSleep(MS2ST(250));
+		}
 	}
 	return (msg_t)NULL;
 }
@@ -408,13 +425,6 @@ int main(void) {
 	halInit();
 	chSysInit();
 
-	palSetPad(GPIOD, GPIOD_LED3);
-	chThdSleep(MS2ST(250));
-	palSetPad(GPIOD, GPIOD_LED4);
-	chThdSleep(MS2ST(250));
-	palSetPad(GPIOD, GPIOD_LED6);
-	chThdSleep(MS2ST(250));
-	palSetPad(GPIOD, GPIOD_LED5);
 	/*
 	 * Initializes a serial-over-USB CDC driver.
 	 */
