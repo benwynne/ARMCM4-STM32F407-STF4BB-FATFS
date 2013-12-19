@@ -9,8 +9,13 @@ The demo runs on a STM32F4-Discovery board + Embest DM-STF4BB
     
 ** The Demo **
 
-The MicroSD port on the Embest board is used for FATfs actions.
-
+The MicroSD port on the Embest board is used for FATfs actions though SDIO
+    If a card is inserted the lights chase counter-clockwise
+    If a card is not inserted the lights chase clockwise
+    
+    The Embest BB board does not have the ability to detect when a card is 
+    inserted so the SD card must be present when the board is reset.
+    
 The USB-FS port is used as USB-CDC and a command shell is ready to accepts
 commands there.
     tree
