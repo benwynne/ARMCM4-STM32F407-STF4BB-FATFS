@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>ARMCM4-STM32F407-LWIP-FATFS-USB</name>
+	<name>ARMCM4-STM32F407-STF4BB-FATFS</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -77,9 +77,29 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>.cproject</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.cproject</locationURI>
+		</link>
+		<link>
+			<name>.project</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.project</locationURI>
+		</link>
+		<link>
+			<name>Makefile</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/Makefile</locationURI>
+		</link>
+		<link>
 			<name>board</name>
 			<type>2</type>
-			<locationURI>CHIBIOS/boards/OLIMEX_STM32_E407</locationURI>
+			<location>C:/ChibiStudio/chibios/boards/EMBEST_DMSTF4BB</location>
+		</link>
+		<link>
+			<name>chconf.h</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/chconf.h</locationURI>
 		</link>
 		<link>
 			<name>fatfs</name>
@@ -87,9 +107,29 @@
 			<locationURI>CHIBIOS/ext/fatfs</locationURI>
 		</link>
 		<link>
+			<name>ffconf.h</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/ffconf.h</locationURI>
+		</link>
+		<link>
+			<name>halconf.h</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/halconf.h</locationURI>
+		</link>
+		<link>
 			<name>lwip</name>
 			<type>2</type>
 			<locationURI>CHIBIOS/ext/lwip</locationURI>
+		</link>
+		<link>
+			<name>main.c</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/main.c</locationURI>
+		</link>
+		<link>
+			<name>mcuconf.h</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/mcuconf.h</locationURI>
 		</link>
 		<link>
 			<name>os</name>
@@ -97,9 +137,134 @@
 			<locationURI>CHIBIOS/os</locationURI>
 		</link>
 		<link>
+			<name>readme.txt</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/readme.txt</locationURI>
+		</link>
+		<link>
 			<name>test</name>
 			<type>2</type>
 			<locationURI>CHIBIOS/test</locationURI>
+		</link>
+		<link>
+			<name>.git/COMMIT_EDITMSG</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/COMMIT_EDITMSG</locationURI>
+		</link>
+		<link>
+			<name>.git/HEAD</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/HEAD</locationURI>
+		</link>
+		<link>
+			<name>.git/ORIG_HEAD</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/ORIG_HEAD</locationURI>
+		</link>
+		<link>
+			<name>.git/config</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/config</locationURI>
+		</link>
+		<link>
+			<name>.git/description</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/description</locationURI>
+		</link>
+		<link>
+			<name>.git/index</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/index</locationURI>
+		</link>
+		<link>
+			<name>.git/packed-refs</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/packed-refs</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/applypatch-msg.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/applypatch-msg.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/commit-msg.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/commit-msg.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/post-commit.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/post-commit.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/post-receive.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/post-receive.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/post-update.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/post-update.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/pre-applypatch.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/pre-applypatch.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/pre-commit.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/pre-commit.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/pre-push.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/pre-push.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/pre-rebase.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/pre-rebase.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/prepare-commit-msg.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/prepare-commit-msg.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/hooks/update.sample</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/hooks/update.sample</locationURI>
+		</link>
+		<link>
+			<name>.git/info/exclude</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/info/exclude</locationURI>
+		</link>
+		<link>
+			<name>.git/logs/HEAD</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/logs/HEAD</locationURI>
+		</link>
+		<link>
+			<name>.git/refs/heads/master</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/refs/heads/master</locationURI>
+		</link>
+		<link>
+			<name>.git/logs/refs/heads/master</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/logs/refs/heads/master</locationURI>
+		</link>
+		<link>
+			<name>.git/refs/remotes/origin/HEAD</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/refs/remotes/origin/HEAD</locationURI>
+		</link>
+		<link>
+			<name>.git/logs/refs/remotes/origin/HEAD</name>
+			<type>1</type>
+			<locationURI>CHIBIOS/demos/ARMCM4-STM32F407-STF4BB-FATFS/.git/logs/refs/remotes/origin/HEAD</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

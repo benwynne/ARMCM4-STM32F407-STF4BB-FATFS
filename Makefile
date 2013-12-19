@@ -65,33 +65,31 @@ PROJECT = ch
 
 # Imported source files and paths
 CHIBIOS = ../..
-include $(CHIBIOS)/boards/OLIMEX_STM32_E407/board.mk
+include $(CHIBIOS)/boards/EMBEST_DMSTF4BB/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/STM32F4xx/port.mk
 include $(CHIBIOS)/os/kernel/kernel.mk
-include $(CHIBIOS)/os/various/lwip_bindings/lwip.mk
 include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 include $(CHIBIOS)/test/test.mk
 
 # Define linker script file here
 LDSCRIPT= $(PORTLD)/STM32F407xG.ld
-#LDSCRIPT= $(PORTLD)/STM32F407xG_CCM.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CSRC = $(PORTSRC) \
-       $(KERNSRC) \
-       $(TESTSRC) \
-       $(HALSRC) \
-       $(PLATFORMSRC) \
-       $(BOARDSRC) \
-       $(LWSRC) \
-       $(FATFSSRC) \
-       $(CHIBIOS)/os/various/evtimer.c \
-       $(CHIBIOS)/os/various/chprintf.c \
-       $(CHIBIOS)/os/various/shell.c \
-       web/web.c main.c
+CSRC =	$(PORTSRC) \
+        $(KERNSRC) \
+        $(TESTSRC) \
+        $(HALSRC) \
+        $(PLATFORMSRC) \
+        $(BOARDSRC) \
+        $(LWSRC) \
+        $(FATFSSRC) \
+        $(CHIBIOS)/os/various/evtimer.c \
+        $(CHIBIOS)/os/various/chprintf.c \
+        $(CHIBIOS)/os/various/shell.c \
+		main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

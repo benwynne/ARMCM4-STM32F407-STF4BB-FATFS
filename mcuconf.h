@@ -29,7 +29,6 @@
  */
 
 #define STM32F4xx_MCUCONF
-
 /*
  * HAL driver system settings.
  */
@@ -41,7 +40,7 @@
 #define STM32_CLOCK48_REQUIRED              TRUE
 #define STM32_SW                            STM32_SW_PLL
 #define STM32_PLLSRC                        STM32_PLLSRC_HSE
-#define STM32_PLLM_VALUE                    12
+#define STM32_PLLM_VALUE                    8
 #define STM32_PLLN_VALUE                    336
 #define STM32_PLLP_VALUE                    2
 #define STM32_PLLQ_VALUE                    7
@@ -57,9 +56,9 @@
 #define STM32_I2SSRC                        STM32_I2SSRC_CKIN
 #define STM32_PLLI2SN_VALUE                 192
 #define STM32_PLLI2SR_VALUE                 5
-#define STM32_VOS                           STM32_VOS_HIGH
 #define STM32_PVD_ENABLE                    FALSE
 #define STM32_PLS                           STM32_PLS_LEV0
+#define STM32_BKPRAM_ENABLE                 FALSE
 
 /*
  * ADC driver system settings.
@@ -256,6 +255,8 @@
 #define STM32_UART_USE_USART1               FALSE
 #define STM32_UART_USE_USART2               FALSE
 #define STM32_UART_USE_USART3               FALSE
+#define STM32_UART_USE_UART4                FALSE
+#define STM32_UART_USE_UART5                FALSE
 #define STM32_UART_USE_USART6               FALSE
 #define STM32_UART_USART1_RX_DMA_STREAM     STM32_DMA_STREAM_ID(2, 5)
 #define STM32_UART_USART1_TX_DMA_STREAM     STM32_DMA_STREAM_ID(2, 7)
@@ -263,15 +264,23 @@
 #define STM32_UART_USART2_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 6)
 #define STM32_UART_USART3_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 1)
 #define STM32_UART_USART3_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 3)
+#define STM32_UART_UART4_RX_DMA_STREAM      STM32_DMA_STREAM_ID(1, 2)
+#define STM32_UART_UART4_TX_DMA_STREAM      STM32_DMA_STREAM_ID(1, 4)
+#define STM32_UART_UART5_RX_DMA_STREAM      STM32_DMA_STREAM_ID(1, 0)
+#define STM32_UART_UART5_TX_DMA_STREAM      STM32_DMA_STREAM_ID(1, 7)
 #define STM32_UART_USART6_RX_DMA_STREAM     STM32_DMA_STREAM_ID(2, 2)
 #define STM32_UART_USART6_TX_DMA_STREAM     STM32_DMA_STREAM_ID(2, 7)
 #define STM32_UART_USART1_IRQ_PRIORITY      12
 #define STM32_UART_USART2_IRQ_PRIORITY      12
 #define STM32_UART_USART3_IRQ_PRIORITY      12
+#define STM32_UART_UART4_IRQ_PRIORITY       12
+#define STM32_UART_UART5_IRQ_PRIORITY       12
 #define STM32_UART_USART6_IRQ_PRIORITY      12
 #define STM32_UART_USART1_DMA_PRIORITY      0
 #define STM32_UART_USART2_DMA_PRIORITY      0
 #define STM32_UART_USART3_DMA_PRIORITY      0
+#define STM32_UART_UART4_DMA_PRIORITY       0
+#define STM32_UART_UART5_DMA_PRIORITY       0
 #define STM32_UART_USART6_DMA_PRIORITY      0
 #define STM32_UART_DMA_ERROR_HOOK(uartp)    chSysHalt()
 
@@ -279,7 +288,7 @@
  * USB driver system settings.
  */
 #define STM32_USB_USE_OTG1                  TRUE
-#define STM32_USB_USE_OTG2                  TRUE
+#define STM32_USB_USE_OTG2                  FALSE
 #define STM32_USB_OTG1_IRQ_PRIORITY         14
 #define STM32_USB_OTG2_IRQ_PRIORITY         14
 #define STM32_USB_OTG1_RX_FIFO_SIZE         512
