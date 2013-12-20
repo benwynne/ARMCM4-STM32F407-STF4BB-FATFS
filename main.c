@@ -89,8 +89,7 @@ static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
 static const ShellCommand commands[] = {
 	{"mount", cmd_mount},
 	{"unmount", cmd_unmount},
-	{"mem", cmd_mem},
-	{"threads", cmd_threads},
+	{"mkfs", cmd_mkfs},
 	{"tree", cmd_tree},
 	{"free", cmd_free},
 	{"hello", cmd_hello},
@@ -98,6 +97,8 @@ static const ShellCommand commands[] = {
 	{"cat", cmd_cat},
 	{"getlabel", cmd_getlabel},
 	{"setlabel", cmd_setlabel},
+	{"mem", cmd_mem},
+	{"threads", cmd_threads},
 	{NULL, NULL}
 };
 
@@ -128,8 +129,6 @@ static msg_t Thread1(void *arg) {
  * Application entry point.
  */
 int main(void) {
-	static Thread *shelltp = NULL;
-
 	/*
 	 * System initializations.
 	 * - HAL initialization, this also initializes the configured device drivers
@@ -139,23 +138,6 @@ int main(void) {
 	 */
 	halInit();
 	chSysInit();
-
-	/*
-	 * Initializes a serial-over-USB CDC driver.
-	 */
-	sduObjectInit(&SDU1);
-	sduStart(&SDU1, &serusbcfg);
-
-	/*
-	 * Activates the USB driver and then the USB bus pull-up on D+.
-	 * Note, a delay is inserted in order to not have to disconnect the cable
-	 * after a reset.
-	 */
-	usbDisconnectBus(serusbcfg.usbp);
-	chThdSleepMilliseconds(1500);
-	usbStart(serusbcfg.usbp, &usbcfg);
-	usbConnectBus(serusbcfg.usbp);
-
 
 	/*
 	 * Shell manager initialization.
@@ -195,14 +177,7 @@ int main(void) {
 	 */
 
 	while (TRUE) {
-		if (!shelltp && (SDU1.config->usbp->state == USB_ACTIVE)) {
-			palSetPad(GPIOD, GPIOD_LED3);
-			shelltp = shellCreate(&shell_cfg0, SHELL_WA_SIZE, NORMALPRIO);
-		} else if (chThdTerminated(shelltp)) {
-			palClearPad(GPIOD, GPIOD_LED3);
-			chThdRelease(shelltp);    /* Recovers memory of the previous shell.   */
-			shelltp = NULL;           /* Triggers spawning of a new shell.        */
-		}
+
 	}
 	return (int)NULL;
 }

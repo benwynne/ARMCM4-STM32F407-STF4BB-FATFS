@@ -13,6 +13,7 @@
 /**
  * @brief FS object.
  */
+
 static FATFS SDC_FS;
 
 FRESULT scan_files(BaseSequentialStream *chp, char *path);
@@ -20,6 +21,8 @@ FRESULT scan_files(BaseSequentialStream *chp, char *path);
 void cmd_mount(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void cmd_unmount(BaseSequentialStream *chp, int argc, char *argv[]);
+
+void cmd_mkfs(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void cmd_free(BaseSequentialStream *chp, int argc, char *argv[]);
 
@@ -35,4 +38,7 @@ void cmd_getlabel(BaseSequentialStream *chp, int argc, char *argv[]);
 
 void cmd_cat(BaseSequentialStream *chp, int argc, char *argv[]);
 
+void verbose_error(BaseSequentialStream *chp, FRESULT err);
+
+char* fresult_str(FRESULT stat);
 #endif /* FAT_H_ */
