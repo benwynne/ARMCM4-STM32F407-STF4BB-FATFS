@@ -16,17 +16,17 @@
 
 #include <stdio.h>
 #include <string.h>
-
+/* ChibiOS Includes */
 #include "ch.h"
 #include "hal.h"
-#include "test.h"
-
+/* ChibiOS Supplementary Includes */
 #include "chprintf.h"
 #include "shell.h"
-
-#include "usb_cdc.h"
-
+/* FatFS */
 #include "ff.h"
+/* Project includes */
+#include "usb_cdc.h"
+#include "fat.h"
 
 /*===========================================================================*/
 /* Card insertion monitor.                                                   */
@@ -34,119 +34,6 @@
 
 #define POLLING_INTERVAL                10
 #define POLLING_DELAY                   10
-
-/**
- * @brief   Card monitor timer.
- */
-static VirtualTimer tmr;
-
-/**
- * @brief   Debounce counter.
- */
-static unsigned cnt;
-
-/**
- * @brief   Card event sources.
- */
-static EventSource inserted_event, removed_event;
-
-/**
- * @brief   Insertion monitor timer callback function.
- *
- * @param[in] p         pointer to the @p BaseBlockDevice object
- *
- * @notapi
- */
-static void tmrfunc(void *p) {
-	BaseBlockDevice *bbdp = p;
-
-	chSysLockFromIsr();
-	if (cnt > 0) {
-		if (blkIsInserted(bbdp)) {
-			if (--cnt == 0) {
-				chEvtBroadcastI(&inserted_event);
-			}
-		}
-		else
-			cnt = POLLING_INTERVAL;
-	}
-	else {
-		if (!blkIsInserted(bbdp)) {
-			cnt = POLLING_INTERVAL;
-			chEvtBroadcastI(&removed_event);
-		}
-	}
-	chVTSetI(&tmr, MS2ST(POLLING_DELAY), tmrfunc, bbdp);
-	chSysUnlockFromIsr();
-}
-
-/**
- * @brief   Polling monitor start.
- *
- * @param[in] p         pointer to an object implementing @p BaseBlockDevice
- *
- * @notapi
- */
-static void tmr_init(void *p) {
-
-	chEvtInit(&inserted_event);
-	chEvtInit(&removed_event);
-	chSysLock();
-	cnt = POLLING_INTERVAL;
-	chVTSetI(&tmr, MS2ST(POLLING_DELAY), tmrfunc, p);
-	chSysUnlock();
-}
-
-/*===========================================================================*/
-/* FatFs related.                                                            */
-/*===========================================================================*/
-
-/**
- * @brief FS object.
- */
-static FATFS SDC_FS;
-
-/* FS mounted and ready.*/
-static bool_t fs_ready = FALSE;
-
-/* Generic large buffer.*/
-static uint8_t fbuff[1024];
-
-static FRESULT scan_files(BaseSequentialStream *chp, char *path) {
-	FRESULT res;
-	FILINFO fno;
-	DIR dir;
-	int i;
-	char *fn;
-
-#if _USE_LFN
-	fno.lfname = 0;
-	fno.lfsize = 0;
-#endif
-	res = f_opendir(&dir, path);
-	if (res == FR_OK) {
-		i = strlen(path);
-		for (;;) {
-			res = f_readdir(&dir, &fno);
-			if (res != FR_OK || fno.fname[0] == 0)
-				break;
-			if (fno.fname[0] == '.')
-				continue;
-			fn = fno.fname;
-			if (fno.fattrib & AM_DIR) {
-				path[i++] = '/';
-				strcpy(&path[i], fn);
-				res = scan_files(chp, path);
-				if (res != FR_OK)
-					break;
-				path[--i] = 0;
-			} else {
-				chprintf(chp, "%s/%s\r\n", path, fn);
-			}
-		}
-	}
-	return res;
-}
 
 /*===========================================================================*/
 /* USB related stuff.                                                        */
@@ -183,7 +70,6 @@ static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
 static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
 	static const char *states[] = {THD_STATE_NAMES};
 	Thread *tp;
-
 	(void)argv;
 	if (argc > 0) {
 		chprintf(chp, "Usage: threads\r\n");
@@ -200,178 +86,28 @@ static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
 	} while (tp != NULL);
 }
 
-static void cmd_test(BaseSequentialStream *chp, int argc, char *argv[]) {
-	Thread *tp;
-
-	(void)argv;
-	if (argc > 0) {
-		chprintf(chp, "Usage: test\r\n");
-		return;
-	}
-	tp = chThdCreateFromHeap(NULL, TEST_WA_SIZE, chThdGetPriority(),
-	                         TestThread, chp);
-	if (tp == NULL) {
-		chprintf(chp, "out of memory\r\n");
-		return;
-	}
-	chThdWait(tp);
-}
-
-static void cmd_free(BaseSequentialStream *chp, int argc, char *argv[]) {
-	FRESULT err;
-	uint32_t clusters;
-	FATFS *fsp;
-
-	(void)argv;
-	if (argc > 0) {
-		chprintf(chp, "Usage: free\r\n");
-		return;
-	}
-	if (!fs_ready) {
-		chprintf(chp, "File System not mounted\r\n");
-		return;
-	}
-	err = f_getfree("/", &clusters, &fsp);
-	if (err != FR_OK) {
-		chprintf(chp, "FS: f_getfree() failed\r\n");
-		return;
-	}
-	chprintf(chp,"FS: %lu free clusters\r\n    %lu sectors per cluster\r\n",
-		clusters, (uint32_t)SDC_FS.csize);
-	chprintf(chp,"%lu B free\r\n",
-		clusters * (uint32_t)SDC_FS.csize * (uint32_t)MMCSD_BLOCK_SIZE);
-	chprintf(chp,"%lu KB free\r\n",
-		(clusters * (uint32_t)SDC_FS.csize * (uint32_t)MMCSD_BLOCK_SIZE)/(1024));
-	chprintf(chp,"%lu MB free\r\n",
-		(clusters * (uint32_t)SDC_FS.csize * (uint32_t)MMCSD_BLOCK_SIZE)/(1024*1024));
-
-}
-
-static void cmd_tree(BaseSequentialStream *chp, int argc, char *argv[]) {
-	(void)argv;
-	(void)argc;
-	fbuff[0] = 0;
-	scan_files(chp, (char *)fbuff);
-}
-
-static void cmd_hello(BaseSequentialStream *chp, int argc, char *argv[]) {
-	FIL fsrc;   /* file object */
-	(void)argv;
-	if (argc > 0) {
-		chprintf(chp, "Usage: hello\r\n");
-		chprintf(chp, "       Creates hello.txt with 'Hello World'\r\n");
-		return;
-	}
-	f_open(&fsrc, "hello.txt", FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
-	f_puts ("Hello World", &fsrc);
-	f_close(&fsrc);
-}
-
-static void cmd_mkdir(BaseSequentialStream *chp, int argc, char *argv[]) {
-	FRESULT err;
-	if (argc == 0) {
-		chprintf(chp, "Usage: mkdir dirName\r\n");
-		chprintf(chp, "       Creates directory with dirName (no spaces)\r\n");
-		return;
-	}
-	if (!fs_ready) {
-		chprintf(chp, "File System not mounted\r\n");
-		return;
-	}
-	err=f_mkdir(argv[0]);
-	if (err != FR_OK) {
-		chprintf(chp, "FS: f_mkdir(%s) failed\r\n",argv[0]);
-		return;
-	}
-	return;
-}
-
-static void cmd_cat(BaseSequentialStream *chp, int argc, char *argv[]) {
-	FRESULT err;
-	FIL fsrc;   /* file object */
-	char Buffer[255];
-	UINT ByteToRead=sizeof(Buffer);
-	UINT ByteRead;
-	if (argc == 0) {
-		chprintf(chp, "Usage: cat filename\r\n");
-		chprintf(chp, "       Echos filename (no spaces)\r\n");
-		return;
-	}
-	if (!fs_ready) {
-		chprintf(chp, "File System not mounted\r\n");
-		return;
-	}
-	err=f_open(&fsrc, argv[0], FA_READ);
-	if (err != FR_OK) {
-		chprintf(chp, "FS: f_open(%s) failed\r\n",argv[0]);
-		return;
-	}
-	do {
-		memset(Buffer,0,sizeof(Buffer));
-		err=f_read(&fsrc,Buffer,ByteToRead,&ByteRead);
-		if (err != FR_OK) {
-			chprintf(chp, "FS: f_read() failed\r\n");
-			f_close(&fsrc);
-			return;
-		}
-		chprintf(chp, "%s", Buffer);
-	} while (ByteRead>=ByteToRead);
-	chprintf(chp,"\r\n");
-	f_close(&fsrc);
-	return;
-}
-
 static const ShellCommand commands[] = {
+	{"mount", cmd_mount},
+	{"unmount", cmd_unmount},
 	{"mem", cmd_mem},
 	{"threads", cmd_threads},
-	{"test", cmd_test},
 	{"tree", cmd_tree},
 	{"free", cmd_free},
 	{"hello", cmd_hello},
 	{"mkdir", cmd_mkdir},
 	{"cat", cmd_cat},
+	{"getlabel", cmd_getlabel},
+	{"setlabel", cmd_setlabel},
 	{NULL, NULL}
 };
 
-static const ShellConfig shell_cfg1 = {
-	(BaseSequentialStream *)&SDU1,
-	commands
-};
+static const ShellConfig shell_cfg0 = {(BaseSequentialStream *)&SDU1, commands};
+static const ShellConfig shell_cfg1 = {(BaseSequentialStream *)&SD1,  commands};
+static const ShellConfig shell_cfg2 = {(BaseSequentialStream *)&SD2,  commands};
 
 /*===========================================================================*/
 /* Main and generic code.                                                    */
 /*===========================================================================*/
-
-/*
- * Card insertion event.
- */
-static void InsertHandler(eventid_t id) {
-	FRESULT err;
-
-	(void)id;
-	/*
-	 * On insertion SDC initialization and FS mount.
-	 */
-	if (sdcConnect(&SDCD1))
-		return;
-
-	err = f_mount(0, &SDC_FS);
-	if (err != FR_OK) {
-		sdcDisconnect(&SDCD1);
-		return;
-	}
-	fs_ready = TRUE;
-}
-
-/*
- * Card removal event.
- */
-static void RemoveHandler(eventid_t id) {
-
-	(void)id;
-	sdcDisconnect(&SDCD1);
-	fs_ready = FALSE;
-}
 
 /*
  * Green LED blinker thread, times are in milliseconds.
@@ -382,25 +118,8 @@ static msg_t Thread1(void *arg) {
 	(void)arg;
 	chRegSetThreadName("blinker");
 	while (TRUE) {
-		if (fs_ready) {
-			palTogglePad(GPIOD, GPIOD_LED3);
-			chThdSleep(MS2ST(250));
 			palTogglePad(GPIOD, GPIOD_LED4);
 			chThdSleep(MS2ST(250));
-			palTogglePad(GPIOD, GPIOD_LED6);
-			chThdSleep(MS2ST(250));
-			palTogglePad(GPIOD, GPIOD_LED5);
-			chThdSleep(MS2ST(250));
-		} else {
-			palTogglePad(GPIOD, GPIOD_LED5);
-			chThdSleep(MS2ST(250));
-			palTogglePad(GPIOD, GPIOD_LED6);
-			chThdSleep(MS2ST(250));
-			palTogglePad(GPIOD, GPIOD_LED4);
-			chThdSleep(MS2ST(250));
-			palTogglePad(GPIOD, GPIOD_LED3);
-			chThdSleep(MS2ST(250));
-		}
 	}
 	return (msg_t)NULL;
 }
@@ -410,11 +129,7 @@ static msg_t Thread1(void *arg) {
  */
 int main(void) {
 	static Thread *shelltp = NULL;
-	static const evhandler_t evhndl[] = {
-		InsertHandler,
-		RemoveHandler
-	};
-	struct EventListener el0, el1;
+
 	/*
 	 * System initializations.
 	 * - HAL initialization, this also initializes the configured device drivers
@@ -441,22 +156,33 @@ int main(void) {
 	usbStart(serusbcfg.usbp, &usbcfg);
 	usbConnectBus(serusbcfg.usbp);
 
+
 	/*
 	 * Shell manager initialization.
 	 */
 	shellInit();
 
-	/*
-	 * Activates the serial driver 6 and SDC driver 1 using default
-	 * configuration.
-	 */
-	sdStart(&SD6, NULL);
-	sdcStart(&SDCD1, NULL);
 
 	/*
-	 * Activates the card insertion monitor.
+	 * Start SD Driver
 	 */
-	tmr_init(&SDCD1);
+	sdcStart(&SDCD1, NULL);
+	/*
+	 * Activate Serial Drivers 1 & 2
+	 */
+	sdStart(&SD1, NULL);
+	sdStart(&SD2, NULL);
+	// Activates the UART driver 1, PA9(TX) and PA10(RX) are routed to USART1.
+	palSetPadMode(GPIOB, 6, PAL_MODE_ALTERNATE(7));
+	palSetPadMode(GPIOB, 7, PAL_MODE_ALTERNATE(7));
+	// Activates the UART driver 2, PD5(TX) and PD6(RX) are routed to USART2.
+	palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
+	palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+
+
+	// Create shell on USART 1 & 2
+	shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
+	shellCreate(&shell_cfg2, SHELL_WA_SIZE, NORMALPRIO);
 
 	/*
 	 * Creates the blinker thread.
@@ -464,33 +190,19 @@ int main(void) {
 	chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
 	/*
-	 * Creates the LWIP threads (it changes priority internally).
-
-  chThdCreateStatic(wa_lwip_thread, LWIP_THREAD_STACK_SIZE, NORMALPRIO + 2,
-                    lwip_thread, NULL);
-	 */
-	/*
-	 * Creates the HTTP thread (it changes priority internally).
-
-  chThdCreateStatic(wa_http_server, sizeof(wa_http_server), NORMALPRIO + 1,
-                    http_server, NULL);
-	 */
-	/*
 	 * Normal main() thread activity, in this demo it does nothing except
 	 * sleeping in a loop and listen for events.
 	 */
-	chEvtRegister(&inserted_event, &el0, 0);
-	chEvtRegister(&removed_event, &el1, 1);
+
 	while (TRUE) {
-		if (!shelltp && (SDU1.config->usbp->state == USB_ACTIVE))
-			shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
-		else if (chThdTerminated(shelltp)) {
+		if (!shelltp && (SDU1.config->usbp->state == USB_ACTIVE)) {
+			palSetPad(GPIOD, GPIOD_LED3);
+			shelltp = shellCreate(&shell_cfg0, SHELL_WA_SIZE, NORMALPRIO);
+		} else if (chThdTerminated(shelltp)) {
+			palClearPad(GPIOD, GPIOD_LED3);
 			chThdRelease(shelltp);    /* Recovers memory of the previous shell.   */
 			shelltp = NULL;           /* Triggers spawning of a new shell.        */
 		}
-		if (palReadPad(GPIOA, GPIOA_BUTTON_WKUP) != 0) {
-		}
-		chEvtDispatch(evhndl, chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(500)));
 	}
 	return (int)NULL;
 }

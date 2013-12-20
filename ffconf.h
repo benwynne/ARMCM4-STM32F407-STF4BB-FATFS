@@ -10,8 +10,7 @@
 /
 /----------------------------------------------------------------------------*/
 #ifndef _FFCONF
-#define _FFCONF 6502	/* Revision ID */
-
+#define _FFCONF 82786	/* Revision ID */
 
 /*---------------------------------------------------------------------------/
 / Functions and Buffer Configurations
@@ -54,6 +53,8 @@
 #define	_USE_FASTSEEK	0	/* 0:Disable or 1:Enable */
 /* To enable fast seek feature, set _USE_FASTSEEK to 1. */
 
+#define _USE_LABEL		1	/* 0:Disable or 1:Enable */
+/* To enable volume label functions, set _USE_LAVEL to 1 */
 
 /*---------------------------------------------------------------------------/
 / Locale and Namespace Configurations
@@ -188,5 +189,8 @@
 /* To enable file shareing feature, set _FS_SHARE to 1 or greater. The value
    defines how many files can be opened simultaneously. */
 
+#define	_FS_LOCK	0	/* 0:Disable or >=1:Enable */
+/* To enable file lock control feature, set _FS_LOCK to 1 or greater.
+   The value defines how many files can be opened simultaneously. */
 
 #endif /* _FFCONFIG */
