@@ -131,11 +131,7 @@ void cmd_mount(BaseSequentialStream *chp, int argc, char *argv[]) {
 	err = f_mount(0, &SDC_FS);
 	if (err != FR_OK) {
 		chprintf(chp, "FS: f_mount() failed. Is the SD card inserted?\r\n");
-		return;
-	}
-	err = f_opendir(&dir, "/");
-	if (err != FR_OK) {
-		chprintf(chp, "FS: f_mount() failed. Is the SD card inserted?\r\n");
+		verbose_error(chp, err);
 		return;
 	}
 	chprintf(chp, "FS: f_mount() succeeded\r\n");
