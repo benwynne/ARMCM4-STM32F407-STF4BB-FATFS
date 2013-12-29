@@ -29,24 +29,6 @@
 #include "fat.h"
 
 /*===========================================================================*/
-/* Card insertion monitor.                                                   */
-/*===========================================================================*/
-
-#define POLLING_INTERVAL                10
-#define POLLING_DELAY                   10
-
-/*===========================================================================*/
-/* USB related stuff.                                                        */
-/*===========================================================================*/
-
-/*
- * Endpoints to be used for USBD1.
- */
-#define USBD1_DATA_REQUEST_EP           1
-#define USBD1_DATA_AVAILABLE_EP         1
-#define USBD1_INTERRUPT_REQUEST_EP      2
-
-/*===========================================================================*/
 /* Command line related.                                                     */
 /*===========================================================================*/
 
@@ -55,7 +37,6 @@
 
 static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
 	size_t n, size;
-
 	(void)argv;
 	if (argc > 0) {
 		chprintf(chp, "Usage: mem\r\n");
@@ -87,22 +68,21 @@ static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
 }
 
 static const ShellCommand commands[] = {
+	{"mkfs", cmd_mkfs},
 	{"mount", cmd_mount},
 	{"unmount", cmd_unmount},
-	{"mkfs", cmd_mkfs},
-	{"tree", cmd_tree},
-	{"free", cmd_free},
-	{"hello", cmd_hello},
-	{"mkdir", cmd_mkdir},
-	{"cat", cmd_cat},
 	{"getlabel", cmd_getlabel},
 	{"setlabel", cmd_setlabel},
+	{"tree", cmd_tree},
+	{"free", cmd_free},
+	{"mkdir", cmd_mkdir},
+	{"hello", cmd_hello},
+	{"cat", cmd_cat},
 	{"mem", cmd_mem},
 	{"threads", cmd_threads},
 	{NULL, NULL}
 };
 
-static const ShellConfig shell_cfg0 = {(BaseSequentialStream *)&SDU1, commands};
 static const ShellConfig shell_cfg1 = {(BaseSequentialStream *)&SD1,  commands};
 static const ShellConfig shell_cfg2 = {(BaseSequentialStream *)&SD2,  commands};
 
@@ -111,11 +91,10 @@ static const ShellConfig shell_cfg2 = {(BaseSequentialStream *)&SD2,  commands};
 /*===========================================================================*/
 
 /*
- * Green LED blinker thread, times are in milliseconds.
+ * Green LED blinker thread to show the system is running.
  */
 static WORKING_AREA(waThread1, 128);
 static msg_t Thread1(void *arg) {
-
 	(void)arg;
 	chRegSetThreadName("blinker");
 	while (TRUE) {
@@ -149,18 +128,18 @@ int main(void) {
 	 * Start SD Driver
 	 */
 	sdcStart(&SDCD1, NULL);
+
 	/*
 	 * Activate Serial Drivers 1 & 2
 	 */
 	sdStart(&SD1, NULL);
 	sdStart(&SD2, NULL);
-	// Activates the UART driver 1, PA9(TX) and PA10(RX) are routed to USART1.
+	// PA9(TX) and PA10(RX) are routed to USART1.
 	palSetPadMode(GPIOB, 6, PAL_MODE_ALTERNATE(7));
 	palSetPadMode(GPIOB, 7, PAL_MODE_ALTERNATE(7));
-	// Activates the UART driver 2, PD5(TX) and PD6(RX) are routed to USART2.
+	// PD5(TX) and PD6(RX) are routed to USART2.
 	palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
 	palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
-
 
 	// Create shell on USART 1 & 2
 	shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
@@ -172,10 +151,11 @@ int main(void) {
 	chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
 	/*
-	 * Normal main() thread activity, in this demo it does nothing except
-	 * sleeping in a loop and listen for events.
+	 * Set the thread name and set it to the lowest user priority
+	 * Since it is just going to be in a while loop.
 	 */
-
+	chRegSetThreadName("main");
+	chThdSetPriority(LOWPRIO);
 	while (TRUE) {
 
 	}

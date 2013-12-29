@@ -9,26 +9,36 @@ The demo runs on a STM32F4-Discovery board + Embest DM-STF4BB
     
 ** The Demo **
 
-The MicroSD port on the Embest board is used for FATfs actions though SDIO
-    If a card is inserted the lights chase counter-clockwise
-    If a card is not inserted the lights chase clockwise
+The MicroSD port on the Embest board is used for FATfs actions though SDIO.
     
-    The Embest BB board does not have the ability to detect when a card is 
-    inserted so the SD card must be present when the board is reset.
-    
-The USB-FS port is used as USB-CDC and a command shell is ready to accepts
-commands there.
-    tree
-        Display file tree
-    free
-        Display amount of free space in B, KB and MB
-    hello
-        Creates hello.txt with 'Hello World' on the base level of the MicroSD Card.
-    mkdir [dir]
-        Makes directory dir on the base level of the MicroSD Card.
-    cat [file]
-        Echos a file from the MicroSD card to the console
+The Embest BB board does not have the ability to detect when a card is inserted
+    so the mount and unmount commands need to be called before doing anything.
 
+    mount
+        Mount the SD card, must be called before anything else.
+        The blue LED will illuminate when a SD card is mounted.
+    unmount
+        Unmount the SD card 
+    mkfs [partition]
+        Format the [partition], starts at 0
+    getlabel
+        Get the label of the default partition.
+    setlabel [label]
+        Set the label of the default partition.
+    tree
+        Print the file structure
+    free
+        Print free space on the drive.
+    mkdir [dir]
+        Make a directory [dir] on the drive.
+    hello
+        Create hello.txt and put "Hello World" in it.
+    cat [file]
+        Echo  [file] to the terminal.
+        
+    A shell is attached to both:
+        USART1: PA9(TX) & PA10(RX)
+        USART2: PD5(TX) & PD6(RX)
 ** Build Procedure **
 
 The demo has been tested by using the free GCC-based toolchain included with 
