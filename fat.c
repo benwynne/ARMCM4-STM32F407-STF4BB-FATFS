@@ -32,7 +32,6 @@ static char fbuff[1024];
  */
 FRESULT scan_files(BaseSequentialStream *chp, char *path) {
 	FRESULT res = FR_OK;
-#if 0
 	FILINFO fno;
 	DIR dir;
 	int fyear,fmonth,fday,fhour,fminute,fsecond;
@@ -118,7 +117,6 @@ FRESULT scan_files(BaseSequentialStream *chp, char *path) {
 	} else {
 		chprintf(chp, "FS: f_opendir() failed\r\n");
 	}
-#endif
 	return res;
 }
 
@@ -142,7 +140,6 @@ void cmd_mount(BaseSequentialStream *chp, int argc, char *argv[]) {
 }
 
 void cmd_mkfs(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	int partition;
 	if (argc!=1) {
@@ -159,30 +156,26 @@ void cmd_mkfs(BaseSequentialStream *chp, int argc, char *argv[]) {
 		return;
 	}
 	chprintf(chp, "FS: f_mkfs() Finished\r\n");
-#endif
 	return;
 }
 
 void cmd_unmount(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	(void)argc;
 	(void)argv;
 
 	palClearPad(GPIOD, GPIOD_LED6);
 	sdcDisconnect(&SDCD1);
-	err = f_mount(0, NULL);
+	err = f_mount(0, "", 0);
 	if (err != FR_OK) {
 		chprintf(chp, "FS: f_mount() unmount failed\r\n");
 		verbose_error(chp, err);
 		return;
 	}
-#endif
 	return;
 }
 
 void cmd_free(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	uint32_t clusters;
 	FATFS *fsp;
@@ -205,7 +198,6 @@ void cmd_free(BaseSequentialStream *chp, int argc, char *argv[]) {
 		(clusters * (uint32_t)SDC_FS.csize * (uint32_t)MMCSD_BLOCK_SIZE)/(1024));
 	chprintf(chp,"%lu MB free\r\n",
 		(clusters * (uint32_t)SDC_FS.csize * (uint32_t)MMCSD_BLOCK_SIZE)/(1024*1024));
-#endif
 }
 
 void cmd_tree(BaseSequentialStream *chp, int argc, char *argv[]) {
@@ -219,7 +211,6 @@ void cmd_tree(BaseSequentialStream *chp, int argc, char *argv[]) {
 }
 
 void cmd_hello(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FIL fsrc;   /* file object */
 	FRESULT err;
 	int written;
@@ -256,11 +247,9 @@ void cmd_hello(BaseSequentialStream *chp, int argc, char *argv[]) {
 	 * Close the file
 	 */
 	f_close(&fsrc);
-#endif 
 }
 
 void cmd_mkdir(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	if (argc != 1) {
 		chprintf(chp, "Usage: mkdir dirName\r\n");
@@ -282,11 +271,9 @@ void cmd_mkdir(BaseSequentialStream *chp, int argc, char *argv[]) {
 		chprintf(chp, "FS: f_mkdir(%s) succeeded\r\n",argv[0]);
 	}
 	return;
-#endif
 }
 
 void cmd_setlabel(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	if (argc != 1) {
 		chprintf(chp, "Usage: setlabel label\r\n");
@@ -305,11 +292,9 @@ void cmd_setlabel(BaseSequentialStream *chp, int argc, char *argv[]) {
 		chprintf(chp, "FS: f_setlabel(%s) succeeded.\r\n");
 	}
 	return;
-#endif
 }
 
 void cmd_getlabel(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	char lbl[12];
 	DWORD sn;
@@ -335,14 +320,12 @@ void cmd_getlabel(BaseSequentialStream *chp, int argc, char *argv[]) {
 	chprintf(chp, "LABEL: %s\r\n",lbl);
 	chprintf(chp, "  S/N: 0x%X\r\n",sn);
 	return;
-#endif
 }
 
 /*
  * Print a text file to screen
  */
 void cmd_cat(BaseSequentialStream *chp, int argc, char *argv[]) {
-#if 0
 	FRESULT err;
 	FIL fsrc;   /* file object */
 	char Buffer[255];
@@ -392,7 +375,6 @@ void cmd_cat(BaseSequentialStream *chp, int argc, char *argv[]) {
 	 */
 	f_close(&fsrc);
 	return;
-#endif
 }
 
 void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
@@ -400,6 +382,8 @@ void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
 	FIL fil;
 	char line[82];
 	FRESULT fr;
+
+	chprintf(chp, "Attempting to read out message.txt\r\n");
 	
 	/* Register work area to the default drive */
 	f_mount(&SDC_FS, "", 0);
