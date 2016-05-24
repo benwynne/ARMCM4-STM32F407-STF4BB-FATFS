@@ -389,7 +389,7 @@ void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
 	f_mount(&SDC_FS, "", 0);
 
 	/* Open a file */
-	fr = f_open(&fil, "message.txt", FA_READ);
+	fr = f_open(&fil, "SIMPLE~1.GCO", FA_READ);
 	if(fr)
 		return (int)fr;
 

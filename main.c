@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 /* ChibiOS Includes */
 #include "ch.h"
@@ -34,6 +35,8 @@
 
 #define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
 #define TEST_WA_SIZE    THD_WORKING_AREA_SIZE(256)
+
+#define _WHITESPACE  " \t"
 
 static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
 	size_t n, size;
@@ -68,6 +71,27 @@ static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
         } while (tp != NULL);
 }
 
+static void cmd_stringtest(BaseSequentialStream *chp, int argc, char *argv[]) {
+
+	char str[30] = "20300.1232";
+	char *ptr;
+	long ret1;
+	double ret2;
+	char *token;
+
+	/* This function is a simple test of the string functions required for gcode_parse */
+
+	ret1 = strtol(str, NULL, 10);
+
+	chprintf(chp, "number [%ld]\r\n", ret1);
+
+	ret2 = strtod(str, NULL);
+
+	chprintf(chp, "number [%f]\r\n", ret2);
+
+	token = strtok_r(str, _WHITESPACE, &ptr);	
+
+}
 
 static const ShellCommand commands[] = {
 	{"mkfs", cmd_mkfs},
@@ -83,6 +107,7 @@ static const ShellCommand commands[] = {
 	{"mem", cmd_mem},
 	{"threads", cmd_threads},
 	{"bentest", cmd_bentest},
+	{"stringtest", cmd_stringtest},
 	{NULL, NULL}
 };
 
