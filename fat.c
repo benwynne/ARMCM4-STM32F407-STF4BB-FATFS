@@ -31,7 +31,7 @@ static char fbuff[1024];
  * Scan Files in a path and print them to the character stream.
  */
 FRESULT scan_files(BaseSequentialStream *chp, char *path) {
-	FRESULT res;
+	FRESULT res = FR_OK;
 #if 0
 	FILINFO fno;
 	DIR dir;
@@ -409,6 +409,8 @@ void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
 	if(fr)
 		return (int)fr;
 
+
+
 	/* Read all lines and display it */
 	while(f_gets(line, sizeof(line), &fil))
 		chprintf(chp, "%s\r\n", line);
@@ -416,7 +418,7 @@ void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
 	/* Close the file */
 	f_close(&fil);
 
-	return;
+//	return;
 
 }
 
