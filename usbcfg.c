@@ -1,21 +1,23 @@
 /*
- * usb_cdc.h
- *
- *  Created on: Dec 18, 2013
- *      Author: freyjed
- */
+    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio
 
-#ifndef USB_CDC_H_
-#define USB_CDC_H_
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-/*===========================================================================*/
-/* USB related stuff.                                                        */
-/*===========================================================================*/
+        http://www.apache.org/licenses/LICENSE-2.0
 
-/*
- * Serial over USB Driver structure.
- */
-static SerialUSBDriver SDU1;
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
+#include "hal.h"
+
+/* Virtual serial port over USB.*/
+SerialUSBDriver SDU1;
 
 /*
  * Endpoints to be used for USBD1.
@@ -23,11 +25,6 @@ static SerialUSBDriver SDU1;
 #define USBD1_DATA_REQUEST_EP           1
 #define USBD1_DATA_AVAILABLE_EP         1
 #define USBD1_INTERRUPT_REQUEST_EP      2
-
-/*
- * Serial over USB Driver structure.
- */
-static SerialUSBDriver SDU1;
 
 /*
  * USB Device Descriptor.
@@ -267,6 +264,7 @@ static const USBEndpointConfig ep2config = {
  * Handles the USB driver global events.
  */
 static void usb_event(USBDriver *usbp, usbevent_t event) {
+  extern SerialUSBDriver SDU1;
 
   switch (event) {
   case USB_EVENT_RESET:
@@ -274,7 +272,7 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
   case USB_EVENT_ADDRESS:
     return;
   case USB_EVENT_CONFIGURED:
-    chSysLockFromIsr();
+    chSysLockFromISR();
 
     /* Enables the endpoints specified into the configuration.
        Note, this callback is invoked from an ISR so I-Class functions
@@ -285,9 +283,15 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
     /* Resetting the state of the CDC subsystem.*/
     sduConfigureHookI(&SDU1);
 
-    chSysUnlockFromIsr();
+    chSysUnlockFromISR();
     return;
   case USB_EVENT_SUSPEND:
+    chSysLockFromISR();
+
+    /* Disconnection event on suspend.*/
+    sduDisconnectI(&SDU1);
+
+    chSysUnlockFromISR();
     return;
   case USB_EVENT_WAKEUP:
     return;
@@ -298,22 +302,33 @@ static void usb_event(USBDriver *usbp, usbevent_t event) {
 }
 
 /*
+ * Handles the USB driver global events.
+ */
+static void sof_handler(USBDriver *usbp) {
+
+  (void)usbp;
+
+  osalSysLockFromISR();
+  sduSOFHookI(&SDU1);
+  osalSysUnlockFromISR();
+}
+
+/*
  * USB driver configuration.
  */
-static const USBConfig usbcfg = {
+const USBConfig usbcfg = {
   usb_event,
   get_descriptor,
   sduRequestsHook,
-  NULL
+  sof_handler
 };
 
 /*
  * Serial over USB driver configuration.
  */
-static const SerialUSBConfig serusbcfg = {
+const SerialUSBConfig serusbcfg = {
   &USBD1,
   USBD1_DATA_REQUEST_EP,
   USBD1_DATA_AVAILABLE_EP,
   USBD1_INTERRUPT_REQUEST_EP
 };
-#endif /* USB_CDC_H_ */

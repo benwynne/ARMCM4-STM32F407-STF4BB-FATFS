@@ -23,6 +23,16 @@ ifeq ($(USE_LINK_GC),)
   USE_LINK_GC = yes
 endif
 
+# Linker extra options here.
+ifeq ($(USE_LDOPT),)
+  USE_LDOPT = 
+endif
+
+# Enable this if you want link time optimizations (LTO)
+ifeq ($(USE_LTO),)
+  USE_LTO = yes
+endif
+
 # If enabled, this option allows to compile the application in THUMB mode.
 ifeq ($(USE_THUMB),)
   USE_THUMB = yes
@@ -33,6 +43,12 @@ ifeq ($(USE_VERBOSE_COMPILE),)
   USE_VERBOSE_COMPILE = no
 endif
 
+# If enabled, this option makes the build process faster by not compiling
+# modules not used in the current configuration.
+ifeq ($(USE_SMART_BUILD),)
+  USE_SMART_BUILD = yes
+endif
+
 #
 # Build global options
 ##############################################################################
@@ -41,15 +57,21 @@ endif
 # Architecture or project specific options
 #
 
-# Enables the use of FPU on Cortex-M4.
-# Enable this if you really want to use the STM FWLib.
-ifeq ($(USE_FPU),)
-  USE_FPU = no
+# Stack size to be allocated to the Cortex-M process stack. This stack is
+# the stack used by the main() thread.
+ifeq ($(USE_PROCESS_STACKSIZE),)
+  USE_PROCESS_STACKSIZE = 0x400
 endif
 
-# Enable this if you really want to use the STM FWLib.
-ifeq ($(USE_FWLIB),)
-  USE_FWLIB = no
+# Stack size to the allocated to the Cortex-M main/exceptions stack. This
+# stack is used for processing interrupts and exceptions.
+ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
+  USE_EXCEPTIONS_STACKSIZE = 0x400
+endif
+
+# Enables the use of FPU on Cortex-M4 (no, softfp, hard).
+ifeq ($(USE_FPU),)
+  USE_FPU = no
 endif
 
 #
@@ -64,32 +86,42 @@ endif
 PROJECT = ch
 
 # Imported source files and paths
-CHIBIOS = ../..
-include $(CHIBIOS)/boards/EMBEST_DMSTF4BB/board.mk
-include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
+CHIBIOS = ../../..
+# Startup files.
+include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_stm32f4xx.mk
+# HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/ports/GCC/ARMCMx/STM32F4xx/port.mk
-include $(CHIBIOS)/os/kernel/kernel.mk
+include $(CHIBIOS)/os/hal/ports/STM32/STM32F4xx/platform.mk
+#include $(CHIBIOS)/os/hal/boards/ST_STM32F4_DISCOVERY/board.mk
+include $(CHIBIOS)/os/hal/boards/EMBEST_DMSTF4BB/board.mk
+include $(CHIBIOS)/os/hal/osal/rt/osal.mk
+# RTOS files (optional).
+include $(CHIBIOS)/os/rt/rt.mk
+include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
+# Other files (optional).
+include $(CHIBIOS)/test/rt/test.mk
 include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
-include $(CHIBIOS)/test/test.mk
 
 # Define linker script file here
-LDSCRIPT= $(PORTLD)/STM32F407xG.ld
+LDSCRIPT= $(STARTUPLD)/STM32F407xG.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CSRC =	$(PORTSRC) \
-        $(KERNSRC) \
-        $(TESTSRC) \
-        $(HALSRC) \
-        $(PLATFORMSRC) \
-        $(BOARDSRC) \
-        $(LWSRC) \
-        $(FATFSSRC) \
-        $(CHIBIOS)/os/various/evtimer.c \
-        $(CHIBIOS)/os/various/chprintf.c \
-        $(CHIBIOS)/os/various/shell.c \
-		fat.c main.c
+CSRC = $(STARTUPSRC) \
+       $(KERNSRC) \
+       $(PORTSRC) \
+       $(OSALSRC) \
+       $(HALSRC) \
+       $(PLATFORMSRC) \
+       $(BOARDSRC) \
+       $(TESTSRC) \
+       $(LWSRC) \
+       $(FATFSSRC) \
+       $(CHIBIOS)/os/various/evtimer.c \
+       $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
+       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
+       $(CHIBIOS)/os/various/shell.c \
+       usbcfg.c fat.c main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -116,12 +148,13 @@ TCSRC =
 TCPPSRC =
 
 # List ASM source files here
-ASMSRC = $(PORTASM)
+ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
-INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
-         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(LWINC) \
-         $(FATFSINC) \
-         $(CHIBIOS)/os/various
+INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
+         $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
+	 $(FATFSINC) \
+         $(CHIBIOS)/os/various/devices_lib/accel \
+         $(CHIBIOS)/os/hal/lib/streams $(CHIBIOS)/os/various
 
 #
 # Project, sources and paths
@@ -144,7 +177,9 @@ LD   = $(TRGT)gcc
 #LD   = $(TRGT)g++
 CP   = $(TRGT)objcopy
 AS   = $(TRGT)gcc -x assembler-with-cpp
+AR   = $(TRGT)ar
 OD   = $(TRGT)objdump
+SZ   = $(TRGT)size
 HEX  = $(CP) -O ihex
 BIN  = $(CP) -O binary
 
@@ -155,36 +190,14 @@ AOPT =
 TOPT = -mthumb -DTHUMB
 
 # Define C warning options here
-CWARN = -Wall -Wextra -Wstrict-prototypes
+CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes
 
 # Define C++ warning options here
-CPPWARN = -Wall -Wextra
+CPPWARN = -Wall -Wextra -Wundef
 
 #
 # Compiler settings
-##############################################################################
 
-##############################################################################
-# Start of default section
-#
-
-# List all default C defines here, like -D_DEBUG=1
-DDEFS =
-
-# List all default ASM defines here, like -D_DEBUG=1
-DADEFS =
-
-# List all default directories to look for include files here
-DINCDIR =
-
-# List the default directory to look for the libraries here
-DLIBDIR =
-
-# List all default libraries here
-DLIBS =
-
-#
-# End of default section
 ##############################################################################
 
 ##############################################################################
@@ -210,18 +223,5 @@ ULIBS =
 # End of user defines
 ##############################################################################
 
-ifeq ($(USE_FPU),yes)
-  USE_OPT += -mfloat-abi=softfp -mfpu=fpv4-sp-d16 -fsingle-precision-constant
-  DDEFS += -DCORTEX_USE_FPU=TRUE
-else
-  DDEFS += -DCORTEX_USE_FPU=FALSE
-endif
-
-ifeq ($(USE_FWLIB),yes)
-  include $(CHIBIOS)/ext/stm32lib/stm32lib.mk
-  CSRC += $(STM32SRC)
-  INCDIR += $(STM32INC)
-  USE_OPT += -DUSE_STDPERIPH_DRIVER
-endif
-
-include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
+RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
+include $(RULESPATH)/rules.mk

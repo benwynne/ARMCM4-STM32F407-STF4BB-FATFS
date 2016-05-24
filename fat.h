@@ -26,6 +26,7 @@ void cmd_getlabel(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_hello(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mkdir(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_cat(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]);
 void verbose_error(BaseSequentialStream *chp, FRESULT err);
 char* fresult_str(FRESULT stat);
 #endif /* FAT_H_ */

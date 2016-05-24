@@ -25,15 +25,15 @@
 /* FatFS */
 #include "ff.h"
 /* Project includes */
-#include "usb_cdc.h"
+#include "usbcfg.h"
 #include "fat.h"
 
 /*===========================================================================*/
 /* Command line related.                                                     */
 /*===========================================================================*/
 
-#define SHELL_WA_SIZE   THD_WA_SIZE(2048)
-#define TEST_WA_SIZE    THD_WA_SIZE(256)
+#define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
+#define TEST_WA_SIZE    THD_WORKING_AREA_SIZE(256)
 
 static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
 	size_t n, size;
@@ -43,29 +43,31 @@ static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
 		return;
 	}
 	n = chHeapStatus(NULL, &size);
-	chprintf(chp, "core free memory : %u bytes\r\n", chCoreStatus());
+	chprintf(chp, "core free memory : %u bytes\r\n", chCoreGetStatusX());
 	chprintf(chp, "heap fragments   : %u\r\n", n);
 	chprintf(chp, "heap free total  : %u bytes\r\n", size);
 }
 
 static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
-	static const char *states[] = {THD_STATE_NAMES};
-	Thread *tp;
-	(void)argv;
-	if (argc > 0) {
-		chprintf(chp, "Usage: threads\r\n");
-		return;
-	}
-	chprintf(chp, "    addr    stack prio refs     state time\r\n");
-	tp = chRegFirstThread();
-	do {
-		chprintf(chp, "%.8lx %.8lx %4lu %4lu %9s %lu\r\n",
-		         (uint32_t)tp, (uint32_t)tp->p_ctx.r13,
-		         (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
-		         states[tp->p_state], (uint32_t)tp->p_time);
-		tp = chRegNextThread(tp);
-	} while (tp != NULL);
+        static const char *states[] = {CH_STATE_NAMES};
+        thread_t *tp;
+
+        (void)argv;
+        if (argc > 0) {
+                chprintf(chp, "Usage: threads\r\n");
+                return;
+        }
+        chprintf(chp, "thread name        addr    stack prio refs     state\r\n");
+        tp = chRegFirstThread();
+        do {
+                chprintf(chp, "%15s %08lx %08lx %4lu %4lu %9s\r\n",
+                                tp->p_name, (uint32_t)tp, (uint32_t)tp->p_ctx.r13,
+                                (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
+                                states[tp->p_state]);
+                tp = chRegNextThread(tp);
+        } while (tp != NULL);
 }
+
 
 static const ShellCommand commands[] = {
 	{"mkfs", cmd_mkfs},
@@ -83,8 +85,7 @@ static const ShellCommand commands[] = {
 	{NULL, NULL}
 };
 
-static const ShellConfig shell_cfg1 = {(BaseSequentialStream *)&SD1,  commands};
-static const ShellConfig shell_cfg2 = {(BaseSequentialStream *)&SD2,  commands};
+static const ShellConfig shell_cfg1 = {(BaseSequentialStream *)&SDU1,  commands};
 
 /*===========================================================================*/
 /* Main and generic code.                                                    */
@@ -93,21 +94,23 @@ static const ShellConfig shell_cfg2 = {(BaseSequentialStream *)&SD2,  commands};
 /*
  * Green LED blinker thread to show the system is running.
  */
-static WORKING_AREA(waThread1, 128);
-static msg_t Thread1(void *arg) {
+static THD_WORKING_AREA(waThread1, 128);
+static THD_FUNCTION(Thread1, arg) {
 	(void)arg;
 	chRegSetThreadName("blinker");
 	while (TRUE) {
 			palTogglePad(GPIOD, GPIOD_LED4);
 			chThdSleep(MS2ST(250));
 	}
-	return (msg_t)NULL;
 }
 
 /*
  * Application entry point.
  */
 int main(void) {
+
+	thread_t *shelltp = NULL;
+
 	/*
 	 * System initializations.
 	 * - HAL initialization, this also initializes the configured device drivers
@@ -123,6 +126,23 @@ int main(void) {
 	 */
 	shellInit();
 
+        /*
+         * Initializes a serial-over-USB CDC driver.
+         */
+        sduObjectInit(&SDU1);
+        sduStart(&SDU1, &serusbcfg);
+
+        /*
+         * Activates the USB driver and then the USB bus pull-up on D+.
+         * Note, a delay is inserted in order to not have to disconnect the cable
+         * after a reset.
+         */
+        usbDisconnectBus(serusbcfg.usbp);
+        chThdSleepMilliseconds(1000);
+        usbStart(serusbcfg.usbp, &usbcfg);
+        usbConnectBus(serusbcfg.usbp);
+
+
 
 	/*
 	 * Start SD Driver
@@ -132,32 +152,39 @@ int main(void) {
 	/*
 	 * Activate Serial Drivers 1 & 2
 	 */
-	sdStart(&SD1, NULL);
-	sdStart(&SD2, NULL);
+	//sdStart(&SDU1, NULL);
 	// PA9(TX) and PA10(RX) are routed to USART1.
-	palSetPadMode(GPIOB, 6, PAL_MODE_ALTERNATE(7));
-	palSetPadMode(GPIOB, 7, PAL_MODE_ALTERNATE(7));
-	// PD5(TX) and PD6(RX) are routed to USART2.
-	palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
-	palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+	//palSetPadMode(GPIOB, 6, PAL_MODE_ALTERNATE(7));
+	//palSetPadMode(GPIOB, 7, PAL_MODE_ALTERNATE(7));
 
 	// Create shell on USART 1 & 2
 	shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
-	shellCreate(&shell_cfg2, SHELL_WA_SIZE, NORMALPRIO);
 
 	/*
 	 * Creates the blinker thread.
 	 */
 	chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-	/*
-	 * Set the thread name and set it to the lowest user priority
-	 * Since it is just going to be in a while loop.
-	 */
-	chRegSetThreadName("main");
-	chThdSetPriority(LOWPRIO);
-	while (TRUE) {
+        /*
+         * Normal main() thread activity, in this demo it just performs
+         * a shell respawn upon its termination.
+         */
+        while (true) {
+                if (!shelltp) {
+                        if (SDU1.config->usbp->state == USB_ACTIVE) {
+                                /* Spawns a new shell.*/
+                                shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
+                        }
+                }
+                else {
+                        /* If the previous shell exited.*/
+                        if (chThdTerminatedX(shelltp)) {
+                                /* Recovers memory of the previous shell.*/
+                                chThdRelease(shelltp);
+                                shelltp = NULL;
+                        }
+                }
+                chThdSleepMilliseconds(500);
+        }
 
-	}
-	return (int)NULL;
 }
