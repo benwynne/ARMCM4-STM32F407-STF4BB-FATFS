@@ -29,14 +29,20 @@
 FIL fil;
 
 void cmd_gcodetest(BaseSequentialStream *chp, int argc, char *argv[]) {
-	//FIL fil;
+	FIL debugfil;
 	char line[82];
 	_gcode_error_t retval;
 	_param_t parsedline;
+	char debugbuff[128];
+
 
 	memset(&parsedline, 0, sizeof(_param_t));
 
-	retval = _open_job(chp, "TEST~1.GCO");	
+	retval = _open_job(chp, "SIMPLE~1.GCO");	
+
+	f_open(&debugfil, "output.log", FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
+
+	
 
 	if(retval == GCODE_OK)
 	{
@@ -51,8 +57,13 @@ void cmd_gcodetest(BaseSequentialStream *chp, int argc, char *argv[]) {
 			chprintf(chp, "             Z[%ld]\r\n", parsedline.z);
 			chprintf(chp, "             E[%ld]\r\n", parsedline.e);
 			chprintf(chp, "             F[%ld]\r\n", parsedline.f);
+
+			sprintf(&debugbuff, "%ld, %ld\n", parsedline.x, parsedline.y);
+			f_puts(&debugbuff, &debugfil);
 		}
 	}
+
+	f_close(&debugfil);
 
 	retval = _close_job(chp);
 
