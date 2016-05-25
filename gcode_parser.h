@@ -1,8 +1,8 @@
 /*
  * gcode_parser.h
  *
- *  Created on: Dec 19, 2013
- *      Author: Jed Frey
+ *  Created on: May 25th 2016
+ *      Author: Ben Wynne
  */
 
 #include "ff.h"
@@ -72,7 +72,9 @@ static uint32_t _curr_e = 0;
 /* add functions here */
 
 void cmd_gcodetest(BaseSequentialStream *chp, int argc, char *argv[]);
-static _gcode_error_t _process_line(BaseSequentialStream *chp, char *line, int fd);
+_gcode_error_t _open_job(BaseSequentialStream *chp, char *filename);
+_gcode_error_t _close_job(BaseSequentialStream *chp);
+static _gcode_error_t _process_line(BaseSequentialStream *chp, char *line, _param_t *param);
 static _gcode_error_t _get_xyzef(BaseSequentialStream *chp, int argc, _cmd_data_t *cmd_data, _param_t *param);
 
 

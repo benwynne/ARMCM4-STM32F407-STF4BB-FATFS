@@ -1,8 +1,8 @@
 /*
  * gcode_parser.c
  *
- *  Created on: Dec 19, 2013
- *      Author: Jed Frey
+ *  Created on: 25th May 2016
+ *      Author: Ben Wynne
  */
 
 /*===========================================================================*/
@@ -25,14 +25,43 @@
 
 #include "ff.h"
 
-void cmd_gcodetest(BaseSequentialStream *chp, int argc, char *argv[]) {
-	FIL fil;
-	char line[82];
-	FRESULT fr, err;
-	char buff[256];
-	char *ptr, *cmd, term;
+// Fat FS file object
+FIL fil;
 
-// 1 Mount Volume, open file	
+void cmd_gcodetest(BaseSequentialStream *chp, int argc, char *argv[]) {
+	//FIL fil;
+	char line[82];
+	_gcode_error_t retval;
+	_param_t parsedline;
+
+	memset(&parsedline, 0, sizeof(_param_t));
+
+	retval = _open_job(chp, "TEST~1.GCO");	
+
+	if(retval == GCODE_OK)
+	{
+		while(f_gets(line, sizeof(line), &fil))
+		{	
+			// process the line!
+			_process_line(chp, (char *)&line, &parsedline);
+			// parsedline will contain move object.
+			chprintf(chp, "MOVE READY:\r\n");
+			chprintf(chp, "             X[%ld]\r\n", parsedline.x);
+			chprintf(chp, "             Y[%ld]\r\n", parsedline.y);
+			chprintf(chp, "             Z[%ld]\r\n", parsedline.z);
+			chprintf(chp, "             E[%ld]\r\n", parsedline.e);
+			chprintf(chp, "             F[%ld]\r\n", parsedline.f);
+		}
+	}
+
+	retval = _close_job(chp);
+
+}
+
+_gcode_error_t _open_job(BaseSequentialStream *chp, char *filename)
+{
+	FRESULT fr;
+	// Mount the volume and open the specified file	
 	chprintf(chp, "attempting to read job file\r\n");
 
 	palSetPad(GPIOD, GPIOD_LED6);
@@ -41,45 +70,43 @@ void cmd_gcodetest(BaseSequentialStream *chp, int argc, char *argv[]) {
 	/* Register work area to the default drive */
 	f_mount(&SDC_FS, "", 0);
 	
-	fr = f_open(&fil, "Test~1.GCO", FA_READ);
-
-// Loop through the whole file line by line
-	while(f_gets(line, sizeof(line), &fil))
-	{	
-		// process the instruction
-		//chprintf(chp, "%s\r\n", line);
-
-		// process the line!
-		_process_line(chp, (char *)&line, 0);
+	fr = f_open(&fil, filename, FA_READ);
+	if(fr != FR_OK) {
+		chprintf(chp, "FS: f_open() cannot open file %s\r\n", filename);
+		return GCODE_ERROR;
 	}
 
-// Close the File / Unmount
-	/* Close the file */
-	f_close(&fil);
+	return GCODE_OK;
+}
 
+_gcode_error_t _close_job(BaseSequentialStream *chp)
+{
+	FRESULT err;
+
+	f_close(&fil);
+	
 	palClearPad(GPIOD, GPIOD_LED6);
 	sdcDisconnect(&SDCD1);
 	err = f_mount(0, "", 0);
 	if(err != FR_OK) {
-		chprintf(chp, "FS: f_mount() unmount failed\r\n");
+		chprintf(chp, "FS: f_mount() unmount failed!\r\n");
 		verbose_error(chp, err);
-		return;
+		return GCODE_ERROR;
 	}
 
-
 	f_close(&fil);
+
+	return GCODE_OK;
 }
 
-static _gcode_error_t _process_line(BaseSequentialStream *chp, char *line, int fd)
+static _gcode_error_t _process_line(BaseSequentialStream *chp, char *line, _param_t *param)
 {
 	char *token, *ptr = NULL;
 	_cmd_data_t cmd_data[_MAX_ARGS];
-	_param_t param;
-	char buff[64];
-	int result = GCODE_OK;
+//	_param_t param;
 	int argc = 0;
 
-	memset(&param, 0, sizeof(_param_t));
+	memset(param, 0, sizeof(_param_t));
 
 //	chprintf(chp, "Processing line [%s]\r\n", line);
 //#define DEBUG_PROCESS_LINE
@@ -134,7 +161,7 @@ static _gcode_error_t _process_line(BaseSequentialStream *chp, char *line, int f
 		if(argc >= _MAX_ARGS)
 		{
 			chprintf(chp, "MAX ARGS reached, dropping cmd: %s\r\n", line);
-			result = GCODE_ERROR;
+			//result = GCODE_ERROR;
 		}
 		else
 		{
@@ -146,50 +173,41 @@ static _gcode_error_t _process_line(BaseSequentialStream *chp, char *line, int f
 						/* Move / Travel Move */
 						case 0:
 						case 1:
-							param.x = (double)-1;
-							param.y = (double)-1;
-							param.z = (double)-1;
-							param.e = (double)-1;
-							param.f = (double)-1;
-							_get_xyzef(chp, argc, cmd_data, &param);
+							param->x = (double)-1;
+							param->y = (double)-1;
+							param->z = (double)-1;
+							param->e = (double)-1;
+							param->f = (double)-1;
+							_get_xyzef(chp, argc, cmd_data, param);
 
 
 							// Inherit feedrate and positions from last values if
 							// undefined.
 							
-							if(param.f == (double)-1)
-								param.f = _curr_feedrate;
+							if(param->f == (double)-1)
+								param->f = _curr_feedrate;
 							else
-								_curr_feedrate = param.f;
+								_curr_feedrate = param->f;
 
-							if(param.x == (double)-1)
-								param.x = _curr_x;
+							if(param->x == (double)-1)
+								param->x = _curr_x;
 							else
-								_curr_x = param.x;
+								_curr_x = param->x;
 
-							if(param.y == (double)-1)
-								param.y = _curr_y;
+							if(param->y == (double)-1)
+								param->y = _curr_y;
 							else
-								_curr_y = param.y;
+								_curr_y = param->y;
 
-							if(param.z == (double)-1)
-								param.z = _curr_z;
+							if(param->z == (double)-1)
+								param->z = _curr_z;
 							else
-								_curr_z = param.z;
+								_curr_z = param->z;
 
-							if(param.e == (double)-1)
-								param.e = _curr_e;
+							if(param->e == (double)-1)
+								param->e = _curr_e;
 							else
-								_curr_e = param.e;
-
-							/// at this point the param object is good to go.
-							chprintf(chp, "MOVE READY:\r\n");
-							chprintf(chp, "             X[%ld]\r\n", param.x);
-							chprintf(chp, "             Y[%ld]\r\n", param.y);
-							chprintf(chp, "             Z[%ld]\r\n", param.z);
-							chprintf(chp, "             E[%ld]\r\n", param.e);
-							chprintf(chp, "             F[%ld]\r\n", param.f);
-
+								_curr_e = param->e;
 							break;
 						/* Home Axis */
 						case 28:
