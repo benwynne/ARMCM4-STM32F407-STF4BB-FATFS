@@ -28,6 +28,7 @@
 /* Project includes */
 #include "usbcfg.h"
 #include "fat.h"
+#include "gcode_parser.h"
 
 /*===========================================================================*/
 /* Command line related.                                                     */
@@ -36,7 +37,6 @@
 #define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
 #define TEST_WA_SIZE    THD_WORKING_AREA_SIZE(256)
 
-#define _WHITESPACE  " \t"
 
 static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
 	size_t n, size;
@@ -106,8 +106,8 @@ static const ShellCommand commands[] = {
 	{"cat", cmd_cat},
 	{"mem", cmd_mem},
 	{"threads", cmd_threads},
-	{"bentest", cmd_bentest},
 	{"stringtest", cmd_stringtest},
+	{"gcodetest", cmd_gcodetest},
 	{NULL, NULL}
 };
 

@@ -141,7 +141,7 @@ void cmd_mount(BaseSequentialStream *chp, int argc, char *argv[]) {
 
 void cmd_mkfs(BaseSequentialStream *chp, int argc, char *argv[]) {
 	FRESULT err;
-	int partition;
+	const TCHAR* partition;
 	if (argc!=1) {
 		chprintf(chp, "Usage: mkfs [partition]\r\n");
 		chprintf(chp, "       Formats partition [partition]\r\n");
@@ -377,21 +377,26 @@ void cmd_cat(BaseSequentialStream *chp, int argc, char *argv[]) {
 	return;
 }
 
+/* This function mounts the volume, reads a file and unmounts the volume */
+
 void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
 
 	FIL fil;
 	char line[82];
-	FRESULT fr;
+	FRESULT fr, err;
 
 	chprintf(chp, "Attempting to read out message.txt\r\n");
 	
+        palSetPad(GPIOD, GPIOD_LED6);
+        sdcConnect(&SDCD1);
+
 	/* Register work area to the default drive */
 	f_mount(&SDC_FS, "", 0);
 
 	/* Open a file */
-	fr = f_open(&fil, "SIMPLE~1.GCO", FA_READ);
-	if(fr)
-		return (int)fr;
+	fr = f_open(&fil, "TEST~1.GCO", FA_READ);
+//	if(fr)
+//		return (int)fr;
 
 
 
@@ -401,6 +406,16 @@ void cmd_bentest(BaseSequentialStream *chp, int argc, char *argv[]) {
 
 	/* Close the file */
 	f_close(&fil);
+
+	palClearPad(GPIOD, GPIOD_LED6);
+	sdcDisconnect(&SDCD1);
+	err = f_mount(0, "", 0);
+	if (err != FR_OK) {
+		chprintf(chp, "FS: f_mount() unmount failed\r\n");
+		verbose_error(chp, err);
+		return;
+	}
+
 
 //	return;
 
